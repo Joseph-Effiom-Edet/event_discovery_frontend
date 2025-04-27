@@ -17,6 +17,10 @@ This directory contains the React Native (Expo) mobile application frontend for 
 - [Key Components & Screens](#key-components--screens)
 - [Dependencies](#dependencies)
 - [Scripts](#scripts)
+- [Setup Instructions](#setup-instructions)
+- [Architectural Decisions](#architectural-decisions)
+- [Assumptions or Limitations](#assumptions-or-limitations)
+- [Future Improvements](#future-improvements)
 
 ## Description
 
@@ -34,6 +38,39 @@ The frontend is a cross-platform mobile application built using React Native and
 -   View bookmarked events.
 -   Event registration and cancellation.
 -   Event bookmarking.
+
+## Setup Instructions
+
+_TODO: Add detailed setup instructions here, perhaps referencing the 'Getting Started' section or adding specific steps._
+
+## Architectural Decisions
+
+_TODO: Briefly explain key architectural choices:_
+- _Why React Native/Expo?_
+- _Why Expo Router for navigation?_
+- _Why Axios for HTTP requests?_
+- _Why Context API for state management (vs. Redux, Zustand etc.)?_
+- _Approach to structuring components/screens/services._
+
+## Assumptions or Limitations
+
+_TODO: List any assumptions made during development or known limitations:_
+- _Example: Assumes a specific version of Expo SDK/React Native._
+- _Example: Map view functionality might differ between platforms or require specific API keys._
+- _Example: Location services accuracy depends on device settings and permissions._
+- _Example: Limited offline support._
+- _Example: UI/UX is optimized for mobile, web compatibility might have limitations._
+
+## Future Improvements
+
+_TODO: Outline potential future enhancements:_
+- _Example: Implement more robust testing (unit, integration, E2E)._
+- _Example: Add push notifications for event reminders._
+- _Example: Implement offline data caching._
+- _Example: Improve UI/UX based on user feedback._
+- _Example: Add social sharing features for events._
+- _Example: Integrate payment gateway for paid events._
+- _Example: Optimize performance for large datasets._
 
 ## Tech Stack
 
