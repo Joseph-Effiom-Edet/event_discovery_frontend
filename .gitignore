@@ -1,0 +1,31 @@
+ # Node dependencies
+/node_modules
+
+# Expo generated files/directories
+/.expo/
+/web-build/
+
+# Environment variables (optional, but good practice)
+.env*
+
+# Package manager logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Native build artifacts (if ejecting or using development builds)
+/android/app/build/
+/android/build/
+/android/.gradle/
+/ios/build/
+/ios/Pods/
+
+# Optional: Common editor directories
+.idea/
+.vscode/ !(settings.json)
+
+# Optional: MacOS folder attributes
+.DS_Store
+
+# Optional: Windows thumbnail cache
+Thumbs.db
