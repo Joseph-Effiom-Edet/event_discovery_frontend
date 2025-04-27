@@ -35,13 +35,15 @@ const EventDetailScreen = () => {
         setError(null);
         setLoading(true);
         const eventData = await getEventById(eventId);
+        console.log('[EventDetail] Received eventData:', eventData);
         setEvent(eventData);
         
-        // Check if user is registered for this event
-        if (authState.isAuthenticated && eventData.registrations) {
-          setIsRegistered(
-            eventData.registrations.some(reg => reg.user_id === authState.user.id)
-          );
+        // Check registration status using the flag from the backend
+        if (authState.isAuthenticated) {
+          setIsRegistered(eventData.isCurrentUserRegistered || false);
+        } else {
+          // If not authenticated, cannot be registered
+          setIsRegistered(false);
         }
       } catch (err) {
         console.error('Error fetching event details:', err);
@@ -52,7 +54,7 @@ const EventDetailScreen = () => {
     };
 
     fetchEventDetails();
-  }, [eventId, authState.isAuthenticated, authState.user]);
+  }, [eventId, authState.isAuthenticated, authState.user?.id]);
 
   // Format date function
   const formatEventDate = (startDate, endDate) => {

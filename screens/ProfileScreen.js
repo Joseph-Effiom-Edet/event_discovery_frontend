@@ -28,6 +28,8 @@ const ProfileScreen = () => {
   const [loading, setLoading] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [notification, setNotification] = useState(null);
+  const [profileError, setProfileError] = useState(null);
+  const [passwordError, setPasswordError] = useState(null);
   
   // Form states
   const [name, setName] = useState('');
@@ -65,11 +67,11 @@ const ProfileScreen = () => {
       console.log(`[ProfileScreen] Fetched ${bookmarksData.length} bookmarked events.`); // Add log
     } catch (error) {
       console.error('[ProfileScreen] Error fetching profile data:', error);
-      showNotification('Failed to load your events', 'error');
+      setProfileError('Failed to load your events. Please try again later.');
     } finally {
       setLoading(false);
     }
-  }, [authState.isAuthenticated]); // Dependency: only re-create if auth status changes
+  }, [authState.isAuthenticated]);
   
   // Fetch data when screen comes into focus
   useFocusEffect(
@@ -81,6 +83,10 @@ const ProfileScreen = () => {
   
   // Show notification message
   const showNotification = (message, type = 'info') => {
+    if (type === 'error') {
+      console.error("Attempted to show error notification:", message);
+      return;
+    }
     setNotification({ message, type });
     // Auto-hide after 3 seconds
     setTimeout(() => setNotification(null), 3000);
@@ -96,15 +102,17 @@ const ProfileScreen = () => {
   
   // Handle profile update
   const handleUpdateProfile = async () => {
+    setProfileError(null);
+    setPasswordError(null);
+
     if (!name || !email || !username) {
-      showNotification('All fields are required', 'error');
+      setProfileError('Name, Email, and Username are required.');
       return;
     }
     
     setLoading(true);
     try {
       await updateUserProfile({ name, email, username });
-      // Update the auth context with new user data
       const updatedUser = { ...authState.user, name, email, username };
       authState.updateUser(updatedUser);
       
@@ -112,7 +120,7 @@ const ProfileScreen = () => {
       showNotification('Profile updated successfully', 'success');
     } catch (error) {
       console.error('Error updating profile:', error);
-      showNotification(error.response?.data?.error || 'Failed to update profile', 'error');
+      setProfileError(error.response?.data?.error || 'Failed to update profile');
     } finally {
       setLoading(false);
     }
@@ -120,24 +128,24 @@ const ProfileScreen = () => {
   
   // Handle password change
   const handleChangePassword = async () => {
+    setPasswordError(null);
+    setProfileError(null);
+
     // Validate passwords
     if (!currentPassword) {
-      showNotification('Current password is required', 'error');
+      setPasswordError('Current password is required');
       return;
     }
-    
     if (!newPassword || !confirmPassword) {
-      showNotification('New password and confirmation are required', 'error');
+      setPasswordError('New password and confirmation are required');
       return;
     }
-    
     if (newPassword !== confirmPassword) {
-      showNotification('New passwords do not match', 'error');
+      setPasswordError('New passwords do not match');
       return;
     }
-    
     if (newPassword.length < 6) {
-      showNotification('Password must be at least 6 characters', 'error');
+      setPasswordError('Password must be at least 6 characters');
       return;
     }
     
@@ -145,7 +153,6 @@ const ProfileScreen = () => {
     try {
       await changeUserPassword({ currentPassword, newPassword });
       
-      // Reset password fields
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
@@ -154,7 +161,7 @@ const ProfileScreen = () => {
       showNotification('Password changed successfully', 'success');
     } catch (error) {
       console.error('Error changing password:', error);
-      showNotification(error.response?.data?.error || 'Failed to change password', 'error');
+      setPasswordError(error.response?.data?.error || 'Failed to change password');
     } finally {
       setLoading(false);
     }
@@ -182,6 +189,8 @@ const ProfileScreen = () => {
     }
     setEditMode(false);
     setChangingPassword(false);
+    setProfileError(null);
+    setPasswordError(null);
   };
   
   // Get events based on active tab
@@ -418,11 +427,12 @@ const ProfileScreen = () => {
 
   return (
     <ScrollView style={styles.container}>
-      {notification && (
-        <NotificationBanner 
-          message={notification.message} 
-          type={notification.type} 
-          onClose={() => setNotification(null)} 
+      {notification && notification.type !== 'error' && (
+        <NotificationBanner
+          message={notification.message}
+          type={notification.type}
+          visible={!!notification}
+          onDismiss={() => setNotification(null)}
         />
       )}
       
@@ -478,9 +488,11 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   errorText: {
-    fontSize: 16,
-    color: '#e53935',
+    color: 'red',
+    marginBottom: 10,
+    marginTop: -5,
     textAlign: 'center',
+    fontSize: 14,
   },
   profileInfoContainer: {
     backgroundColor: 'white',

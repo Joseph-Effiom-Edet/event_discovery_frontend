@@ -20,11 +20,11 @@ const MapScreen = () => {
 
   const params = useLocalSearchParams();
   const router = useRouter();
-  const { location, locationPermission } = useContext(LocationContext);
+  const { location, locationPermission, error: locationError } = useContext(LocationContext);
 
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [apiError, setApiError] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
   const [region, setRegion] = useState(null);
   
@@ -95,7 +95,7 @@ const MapScreen = () => {
         }
       } catch (err) {
         console.error('Error initializing map:', err);
-        setError('Failed to initialize map');
+        setApiError('Failed to initialize map');
       } finally {
         setLoading(false);
       }
@@ -114,14 +114,14 @@ const MapScreen = () => {
       const fetchAllEvents = async () => {
         console.log("Fetching all events for map..."); // Add log
         try {
-          setError(null); // Reset error on focus
+          setApiError(null); // Reset error on focus
           // Fetch events WITHOUT location filters
           const eventsData = await getEvents({ limit: 100 }); // Fetch up to 100 events
           setEvents(eventsData);
           console.log(`Fetched ${eventsData.length} events.`); // Add log
         } catch (err) {
           console.error('Error fetching all events for map:', err);
-          setError('Failed to load events for map'); // Set error state
+          setApiError('Failed to load events for map');
         }
       };
       
@@ -143,18 +143,29 @@ const MapScreen = () => {
   //   setRegion(newRegion);
   // };
 
-  if (loading) {
+  // Display location error specifically
+  if (locationError) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#5C6BC0" />
+        <Text style={styles.errorText}>Location Error: {locationError}</Text>
+        {/* Maybe add a retry button for location here? */}
+      </View>
+    );
+  }
+  
+  // Display API or Map init error
+  if (apiError) {
+    return (
+      <View style={styles.centerContainer}>
+        <Text style={styles.errorText}>{apiError}</Text>
       </View>
     );
   }
 
-  if (error) {
+  if (loading) {
     return (
       <View style={styles.centerContainer}>
-        <Text style={styles.errorText}>{error}</Text>
+        <ActivityIndicator size="large" color="#5C6BC0" />
       </View>
     );
   }

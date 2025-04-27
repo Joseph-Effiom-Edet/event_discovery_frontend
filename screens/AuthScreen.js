@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -9,14 +9,15 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
-  Image
+  Image,
+  SafeAreaView
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { AuthContext } from '../context/AuthContext';
 import NotificationBanner from '../components/NotificationBanner';
 
 const AuthScreen = () => {
-  const { login, register } = useContext(AuthContext);
+  const { login, register, authState, clearError } = useContext(AuthContext);
   
   const [isLogin, setIsLogin] = useState(true);
   const [username, setUsername] = useState('');
@@ -25,7 +26,8 @@ const AuthScreen = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
-  const [notification, setNotification] = useState(null);
+  const [localError, setLocalError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
   
   // State for password visibility
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
@@ -40,63 +42,45 @@ const AuthScreen = () => {
     setIsConfirmPasswordVisible(!isConfirmPasswordVisible);
   };
 
-  // Show notification message
-  const showNotification = (message, type = 'error') => {
-    setNotification({ message, type });
-    // Auto-hide after 3 seconds
-    setTimeout(() => setNotification(null), 3000);
-  };
+  // Clear local error when authState.error changes or on component mount
+  useEffect(() => {
+    setLocalError(authState.error);
+    // Clear the context error if it was set
+    if(authState.error) {
+      clearError(); // Clear context error after copying it locally
+    }
+  }, [authState.error, clearError]);
+
+  // Clear errors when switching forms
+  useEffect(() => {
+    setLocalError(null);
+    setSuccessMessage(null);
+    clearError();
+  }, [isLogin]);
 
   // Handle login
-  const handleLogin = async () => {
-    // Validate input
-    if (!email || !password) {
-      showNotification('Email and password are required');
-      return;
-    }
-    
+  const handleAuth = async () => {
+    setLocalError(null); // Clear local error on new attempt
+    setSuccessMessage(null);
     setLoading(true);
     try {
-      await login(email, password);
+      if (isLogin) {
+        await login(email, password);
+        // Login success is handled by navigation, no need for a banner here
+      } else {
+        await register(username, email, password, name);
+        setSuccessMessage('Registration successful! Please log in.'); // Set success message
+        setIsLogin(true); // Switch to login view after registration
+        // Reset fields after successful registration
+        setUsername('');
+        setEmail('');
+        setPassword('');
+        setName('');
+      }
     } catch (error) {
-      console.error('Login error:', error);
-      showNotification(error.response?.data?.error || 'Login failed');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Handle register
-  const handleRegister = async () => {
-    // Validate input
-    if (!username || !email || !password || !name) {
-      showNotification('All fields are required');
-      return;
-    }
-    
-    if (password !== confirmPassword) {
-      showNotification('Passwords do not match');
-      return;
-    }
-    
-    if (password.length < 6) {
-      showNotification('Password must be at least 6 characters');
-      return;
-    }
-    
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      showNotification('Please enter a valid email address');
-      return;
-    }
-    
-    setLoading(true);
-    try {
-      await register(username, email, password, name);
-    } catch (error) {
-      console.error('Registration error:', error);
-      showNotification(error.response?.data?.error || 'Registration failed');
+      console.log('Caught auth error in AuthScreen:', error);
+      setLocalError(error.response?.data?.error || (isLogin ? 'Login failed' : 'Registration failed'));
+      // We don't need NotificationBanner here anymore
     } finally {
       setLoading(false);
     }
@@ -106,35 +90,30 @@ const AuthScreen = () => {
   const toggleAuthMode = () => {
     setIsLogin(!isLogin);
     // Clear notification when switching
-    setNotification(null);
+    setSuccessMessage(null);
   };
 
   return (
-    <KeyboardAvoidingView 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
-    >
-      <ScrollView 
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-      >
-        {notification && (
-          <NotificationBanner 
-            message={notification.message} 
-            type={notification.type} 
-            onClose={() => setNotification(null)} 
+    <SafeAreaView style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        {/* <Image source={require('../assets/event_icon.png')} style={styles.logo} /> */}
+        <Text style={styles.title}>{isLogin ? 'Login' : 'Register'}</Text>
+
+        {/* Display Success Message */}
+        {successMessage && (
+          <NotificationBanner
+            message={successMessage}
+            type="success"
+            visible={!!successMessage}
+            onDismiss={() => setSuccessMessage(null)}
           />
         )}
         
-        {/* App Logo/Icon */}
-        <View style={styles.logoContainer}>
-          <View style={styles.logo}>
-            <Feather name="calendar" size={60} color="#5C6BC0" />
-          </View>
-          <Text style={styles.logoText}>Event Discovery</Text>
-          <Text style={styles.tagline}>Find amazing events near you</Text>
-        </View>
-        
+        {/* Display Local Error Message */}
+        {localError && (
+          <Text style={styles.errorText}>{localError}</Text>
+        )}
+
         {/* Auth Form */}
         <View style={styles.formContainer}>
           <Text style={styles.formTitle}>
@@ -230,7 +209,7 @@ const AuthScreen = () => {
           {/* Submit Button */}
           <TouchableOpacity 
             style={styles.submitButton} 
-            onPress={isLogin ? handleLogin : handleRegister}
+            onPress={handleAuth}
             disabled={loading}
           >
             {loading ? (
@@ -256,7 +235,7 @@ const AuthScreen = () => {
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
@@ -265,14 +244,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f5f5',
   },
-  scrollContent: {
+  scrollContainer: {
     flexGrow: 1,
     padding: 20,
     justifyContent: 'center',
-  },
-  logoContainer: {
-    alignItems: 'center',
-    marginBottom: 40,
   },
   logo: {
     width: 100,
@@ -283,15 +258,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
   },
-  logoText: {
+  title: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#5C6BC0',
-  },
-  tagline: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 5,
+    marginBottom: 20,
+    textAlign: 'center',
   },
   formContainer: {
     backgroundColor: 'white',
@@ -359,6 +331,12 @@ const styles = StyleSheet.create({
   },
   switchModeText: {
     color: '#5C6BC0',
+    fontSize: 14,
+  },
+  errorText: {
+    color: 'red',
+    marginBottom: 15,
+    textAlign: 'center',
     fontSize: 14,
   },
 });

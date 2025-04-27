@@ -14,6 +14,7 @@ const EventsScreen = () => {
     location, 
     locationPermission, 
     loading: locationLoading, 
+    error: locationError,
     requestLocation
   } = useLocation();
 
@@ -23,11 +24,11 @@ const EventsScreen = () => {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [locationFilterEnabled, setLocationFilterEnabled] = useState(false);
   const [searchRadius, setSearchRadius] = useState(10);
-  const [error, setError] = useState(null);
+  const [apiError, setApiError] = useState(null);
 
   const fetchEvents = useCallback(async () => {
     try {
-      setError(null);
+      setApiError(null);
       setLoadingEvents(true);
       
       const filters = {};
@@ -49,7 +50,7 @@ const EventsScreen = () => {
       setEvents(eventsData);
     } catch (err) {
       console.error('Error fetching events:', err);
-      setError('Failed to load events. Please try again.');
+      setApiError('Failed to load events. Please try again.');
     } finally {
       setLoadingEvents(false);
       setRefreshing(false);
@@ -127,11 +128,14 @@ const EventsScreen = () => {
           radius={searchRadius}
           onRadiusChange={onRadiusChange}
         />
+        {locationError && locationPermission !== false && (
+          <Text style={styles.locationErrorText}>Could not fetch location: {locationError}</Text>
+        )}
       </View>
       
-      {error && (
+      {apiError && (
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error}</Text>
+          <Text style={styles.errorText}>{apiError}</Text>
         </View>
       )}
 
@@ -212,6 +216,13 @@ const styles = StyleSheet.create({
   errorText: {
     color: '#c62828',
     textAlign: 'center',
+  },
+  locationErrorText: {
+    fontSize: 12,
+    color: '#ff9800',
+    textAlign: 'center',
+    paddingHorizontal: 10,
+    paddingTop: 5,
   },
 });
 

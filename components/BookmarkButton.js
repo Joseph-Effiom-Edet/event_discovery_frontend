@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { TouchableOpacity, ActivityIndicator } from 'react-native';
+import { TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { checkBookmark, addBookmark, removeBookmark } from '../services/api';
 import { AuthContext } from '../context/AuthContext';
@@ -11,6 +11,7 @@ import { AuthContext } from '../context/AuthContext';
 const BookmarkButton = ({ eventId, size = 24, color = '#5C6BC0', style }) => {
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const { authState } = useContext(AuthContext);
 
   // Check if event is bookmarked on mount
@@ -31,6 +32,7 @@ const BookmarkButton = ({ eventId, size = 24, color = '#5C6BC0', style }) => {
       setIsBookmarked(status.isBookmarked);
     } catch (error) {
       console.error('Error checking bookmark status:', error);
+      setError('Failed to check bookmark status');
     } finally {
       setLoading(false);
     }
@@ -43,6 +45,7 @@ const BookmarkButton = ({ eventId, size = 24, color = '#5C6BC0', style }) => {
       return;
     }
 
+    setError(null);
     try {
       setLoading(true);
       
@@ -55,6 +58,9 @@ const BookmarkButton = ({ eventId, size = 24, color = '#5C6BC0', style }) => {
       setIsBookmarked(!isBookmarked);
     } catch (error) {
       console.error('Error toggling bookmark:', error);
+      setError('Failed to update bookmark');
+      Alert.alert('Error', error.response?.data?.error || 'Could not update bookmark. Please try again.');
+      setIsBookmarked(isBookmarked);
     } finally {
       setLoading(false);
     }
